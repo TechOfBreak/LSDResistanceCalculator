@@ -9,32 +9,71 @@
 <body class="bg-gray-900 text-white flex justify-center items-center min-h-screen">
     <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
         <h1 class="text-2xl font-bold text-center">LSD耐性計算機</h1>
+        <div class="flex justify-center mt-4">
+            <button id="mode1" class="mode-btn active px-4 py-2 bg-blue-500 rounded-lg text-white mr-2">通常計算</button>
+            <button id="mode2" class="mode-btn px-4 py-2 bg-gray-600 rounded-lg text-white">逆計算</button>
+        </div>
         <form id="dosage_form" class="mt-4">
             <label class="block">前回の摂取量:
                 <input id="dose" type="number" min="0" step="5" class="w-full p-2 mt-1 rounded bg-gray-700">
             </label>
-            <label class="block mt-2">効果を期待する摂取量:
+            <label id="desired_label" class="block mt-2">効果を期待する摂取量:
                 <input id="desired" type="number" min="0" class="w-full p-2 mt-1 rounded bg-gray-700">
             </label>
             <label class="block mt-2">前回の摂取からの日数:
                 <input id="days" type="number" min="1" max="14" value="1" class="w-full p-2 mt-1 rounded bg-gray-700">
             </label>
+            <label id="result_label" class="block mt-2 hidden">今回の摂取量:
+                <input id="result_input" type="number" min="0" class="w-full p-2 mt-1 rounded bg-gray-700">
+            </label>
         </form>
         <div class="mt-4 text-center">
-            <p>同じ効果を得るためには</p>
+            <p id="result_text1">同じ効果を得るためには</p>
             <p class="text-3xl font-bold mt-2"><span id="result">0</span> μg</p>
-            <p>を摂取量として目安にしてください。</p>
+            <p id="result_text2">を摂取量として目安にしてください。</p>
         </div>
     </div>
 
     <script>
+        let currentMode = "normal";
+        
+        document.querySelectorAll(".mode-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                document.querySelector(".active").classList.remove("active", "bg-blue-500");
+                this.classList.add("active", "bg-blue-500");
+                
+                if (this.id === "mode1") {
+                    currentMode = "normal";
+                    document.getElementById("desired_label").classList.remove("hidden");
+                    document.getElementById("result_label").classList.add("hidden");
+                    document.getElementById("result_text1").textContent = "同じ効果を得るためには";
+                    document.getElementById("result_text2").textContent = "を摂取量として目安にしてください。";
+                } else {
+                    currentMode = "reverse";
+                    document.getElementById("desired_label").classList.add("hidden");
+                    document.getElementById("result_label").classList.remove("hidden");
+                    document.getElementById("result_text1").textContent = "期待される効果は耐性がない状態で";
+                    document.getElementById("result_text2").textContent = "と同等です。";
+                }
+                calculate();
+            });
+        });
+        
         function calculate() {
             let x1 = parseFloat(document.getElementById("dose").value) || 0;
             let x2 = parseFloat(document.getElementById("desired").value) || 0;
             let n = parseFloat(document.getElementById("days").value) || 1;
-            let estimatedDosage = (x1 / 100) * 280.059565 * Math.pow(n, -0.412565956) + (x2 - x1);
-            let newAmount = Math.max(estimatedDosage, x2);
-            document.getElementById("result").textContent = Math.round(newAmount * 10) / 10;
+            let x3 = parseFloat(document.getElementById("result_input").value) || 0;
+            
+            let result;
+            if (currentMode === "normal") {
+                let estimatedDosage = (x1 / 100) * 280.059565 * Math.pow(n, -0.412565956) + (x2 - x1);
+                result = Math.max(estimatedDosage, x2);
+            } else {
+                let reverseEstimate = (x3 - (x1 / 100) * 280.059565 * Math.pow(n, -0.412565956)) + x1;
+                result = Math.max(reverseEstimate, 0);
+            }
+            document.getElementById("result").textContent = Math.round(result * 10) / 10;
         }
         document.getElementById("dosage_form").addEventListener("input", calculate);
     </script>
